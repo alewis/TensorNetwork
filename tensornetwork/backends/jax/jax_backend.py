@@ -53,7 +53,7 @@ class JaxBackend(base_backend.BaseBackend):
   def reshape(self, tensor: Tensor, shape: Tensor):
     return jnp.reshape(tensor, np.asarray(shape).astype(np.int32))
 
-  def transpose(self, tensor, perm=None):
+  def transpose(self, tensor, perm):
     return jnp.transpose(tensor, perm)
 
   def shape_concat(self, values: Tensor, axis: int) -> Tensor:

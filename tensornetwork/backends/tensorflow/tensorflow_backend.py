@@ -47,7 +47,7 @@ class TensorFlowBackend(base_backend.BaseBackend):
   def reshape(self, tensor: Tensor, shape: Tensor):
     return tf.reshape(tensor, shape)
 
-  def transpose(self, tensor, perm=None):
+  def transpose(self, tensor, perm):
     return tf.transpose(tensor, perm)
 
   def slice(self, tensor: Tensor, start_indices: Tuple[int, ...],
@@ -180,9 +180,7 @@ class TensorFlowBackend(base_backend.BaseBackend):
     return a
 
   def conj(self, tensor: Tensor) -> Tensor:
-    if tensor.dtype != bool:
-      return tf.math.conj(tensor)
-    return tensor
+    return tf.math.conj(tensor)
 
   def eigh(self, matrix: Tensor) -> Tuple[Tensor, Tensor]:
     return tf.linalg.eigh(matrix)

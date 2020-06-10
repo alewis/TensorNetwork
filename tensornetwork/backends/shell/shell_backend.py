@@ -57,10 +57,7 @@ class ShellBackend(base_backend.BaseBackend):
     tensor = tensor.reshape(tuple(shape))
     return tensor
 
-  def transpose(self, tensor: Tensor,
-                perm: Optional[Sequence[int]] = None) -> Tensor:
-    if perm is None:
-      perm = tuple(range(tensor.ndim - 1, -1, -1))
+  def transpose(self, tensor: Tensor, perm: Sequence[int]) -> Tensor:
     shape = tuple(tensor.shape[i] for i in perm)
     tensor = tensor.reshape(tuple(shape))
     return tensor
