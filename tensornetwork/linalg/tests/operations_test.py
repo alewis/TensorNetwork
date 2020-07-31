@@ -425,6 +425,7 @@ def test_kron(backend, dtype, pivotA, pivotB):
   shapeB = (2, 2, 2, 2)
   A, initA = safe_randn(shapeA, backend, dtype)
   B, initB = safe_randn(shapeB, backend, dtype)
+
   if A is not None and B is not None:
     tkron = tensornetwork.linalg.operations.kron(A, B, pivot_axisA=pivotA,
                                                  pivot_axisB=pivotB)
