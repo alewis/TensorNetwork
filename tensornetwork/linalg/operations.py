@@ -400,6 +400,6 @@ def kron(tensorA: Tensor, tensorB: Tensor, pivot_axisA: int = -1,
   backend = tensorA.backend
   matrixA = pivot(tensorA, pivot_axis=pivot_axisA)
   matrixB = pivot(tensorB, pivot_axis=pivot_axisB)
-  arr = backend.einsum("ij,kl->ikjl", matrixA.array, matrixB.array)
+  arr = backend.einsum("ij,kl->ikjl", matrixA.array, matrixB.array, True)
   full_shape = tuple(list(tensorA.shape) + list(tensorB.shape))
   return Tensor(arr, backend=backend).reshape(full_shape)
