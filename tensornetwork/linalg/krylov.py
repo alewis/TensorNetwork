@@ -22,6 +22,7 @@ from tensornetwork import backends
 AbstractBackend = abstract_backend.AbstractBackend
 Array = Any
 Tensor = tensornetwork.tensor.Tensor
+_KRYLOV_MATVECS = {}
 
 def eigsh_lanczos(A: Callable,
                   backend: Optional[Union[Text, AbstractBackend]] = None,
@@ -73,11 +74,19 @@ def eigsh_lanczos(A: Callable,
   if backend is None:
     backend = backend_contextmanager.get_default_backend()
   backend = backends.backend_factory.get_backend(backend)
+  if A not in _KRYLOV_MATVECS[backend.name]:
+    def wrapped(x, *args):
+      X = Tensor(x, backend=backend)
+      Args = [Tensor(a, backend=backend) for a in args]
+      Y = A(X, *Args)
+      return Y.array
+    _KRYLOV_MATVECS[backend.name][A] = wrapped
   if args is not None:
     args = [a.array for a in args]
   if initial_state is not None:
     initial_state = initial_state.array
-  result = backend.eigsh_lanczos(A, args=args,
+  mv = _KRYLOV_MATVECS[backend.name][A]
+  result = backend.eigsh_lanczos(mv, args=args,
                                  initial_state=initial_state,
                                  shape=shape, dtype=dtype,
                                  num_krylov_vecs=num_krylov_vecs, numeig=numeig,
@@ -137,11 +146,21 @@ def eigs(A: Callable,
   if backend is None:
     backend = backend_contextmanager.get_default_backend()
   backend = backends.backend_factory.get_backend(backend)
+  if backend.name not in _KRYLOV_MATVECS:
+    _KRYLOV_MATVECS[backend.name] = backend.name
+  if A not in _KRYLOV_MATVECS[backend.name]:
+    def wrapped(x, *args):
+      X = Tensor(x, backend=backend)
+      Args = [Tensor(a, backend=backend) for a in args]
+      Y = A(X, *Args)
+      return Y.array
+    _KRYLOV_MATVECS[backend.name][A] = wrapped
   if args is not None:
     args = [a.array for a in args]
   if initial_state is not None:
     initial_state = initial_state.array
-  result = backend.eigs(A, args=args, initial_state=initial_state,
+  mv = _KRYLOV_MATVECS[backend.name][A]
+  result = backend.eigs(mv, args=args, initial_state=initial_state,
                         shape=shape, dtype=dtype,
                         num_krylov_vecs=num_krylov_vecs, numeig=numeig,
                         tol=tol, which=which, maxiter=maxiter)
@@ -234,14 +253,28 @@ def gmres(A_mv: Callable,
     x       : The converged solution. It has the same shape as `b`.
     info    : 0 if convergence was achieved, the number of restarts otherwise.
   """
+
   if A_args is not None:
     A_args = [a.array for a in A_args]
+
+  backend = b.backend
+  if backend.name not in _KRYLOV_MATVECS:
+    _KRYLOV_MATVECS[backend.name] = {}
+  if A_mv not in _KRYLOV_MATVECS[backend.name]:
+    def wrapped(x, *args):
+      X = Tensor(x, backend=backend)
+      Args = [Tensor(a, backend=backend) for a in args]
+      Y = A_mv(X, *Args)
+      return Y.array
+    _KRYLOV_MATVECS[backend.name][A_mv] = wrapped
+
   if x0 is not None:
     x0 = x0.array
-  out = b.backend.gmres(A_mv, b.array, A_args=A_args,
-                        x0=x0, tol=tol, atol=atol,
-                        num_krylov_vectors=num_krylov_vectors,
-                        maxiter=maxiter, M=M)
+  mv = _KRYLOV_MATVECS[backend.name][A_mv]
+  out = backend.gmres(mv, b.array, A_args=A_args,
+                      x0=x0, tol=tol, atol=atol,
+                      num_krylov_vectors=num_krylov_vectors,
+                      maxiter=maxiter, M=M)
   result, info = out
   resultT = Tensor(result, backend=b.backend)
   return (resultT, info)
